@@ -45,7 +45,7 @@ class OutputFormatter(object):
         self.top_node = None
 
     def get_language(self):
-        """\
+        """
         Returns the language is by the article or
         the configuration language
         """

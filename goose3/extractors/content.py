@@ -23,6 +23,7 @@ limitations under the License.
 from copy import deepcopy
 
 from goose3.extractors import BaseExtractor
+from lxml.html import HtmlElement
 
 
 class ContentExtractor(BaseExtractor):
@@ -96,6 +97,7 @@ class ContentExtractor(BaseExtractor):
         negative_scoring = 0
         bottom_negativescore_nodes = float(nodes_number) * 0.25
 
+        dupe_track = []
         for node in nodes_with_text:
             boost_score = float(0)
             # boost
@@ -117,34 +119,18 @@ class ContentExtractor(BaseExtractor):
                     language=self.get_language()).get_stopword_count(text_node)
             upscore = int(word_stats.get_stopword_count() + boost_score)
 
-            # parent node
-            parent_node = self.parser.getParent(node)
-            self.update_score(parent_node, upscore)
-            self.update_node_count(parent_node, 1)
+            self.update_score(node, upscore)
+            self.update_node_count(node, 1)
 
-            if parent_node not in parent_nodes:
-                parent_nodes.append(parent_node)
+            if text_node not in dupe_track:
+                parent_nodes.append(node)
+                dupe_track.append(text_node)
 
-            # parentparent node
-            parent_parent_node = self.parser.getParent(parent_node)
-            if parent_parent_node is not None:
-                self.update_node_count(parent_parent_node, 1)
-                self.update_score(parent_parent_node, upscore / 2)
-                if parent_parent_node not in parent_nodes:
-                    parent_nodes.append(parent_parent_node)
-            cnt += 1
-            i += 1
-
-        top_node_score = 0
+        top_node = HtmlElement()
         for itm in parent_nodes:
             score = self.get_score(itm)
-
-            if score > top_node_score:
-                top_node = itm
-                top_node_score = score
-
-            if top_node is None:
-                top_node = itm
+            print("{}\n--------------------\n{}\n".format(score, itm.text_content()))
+            top_node.append(itm)
 
         return top_node
 
